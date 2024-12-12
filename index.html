@@ -244,46 +244,72 @@
             : "Rata-rata tertinggi: -";
       }
 
-      function downloadExcel() {
-        const table = document.getElementById("studentTable");
-        const workbook = XLSX.utils.book_new();
-        const wsData = [];
+     function downloadExcel() {
+  const table = document.getElementById("studentTable");
+  const workbook = XLSX.utils.book_new();
+  const worksheetData = [];
 
-        wsData.push([
-          "No",
-          "Nama",
-          "Mata Pelajaran",
-          "Nilai Angka",
-          "Nilai Huruf",
-          "Nilai Angka (Huruf)",
-          "Rata-rata",
-        ]);
+  // Header untuk Excel
+  worksheetData.push([
+    "No",
+    "Nama",
+    "Mata Pelajaran",
+    "Nilai Angka",
+    "Nilai Huruf",
+    "Nilai Angka (Huruf)",
+    "Rata-rata",
+  ]);
 
-        const rows = table.getElementsByTagName("tbody")[0].rows;
-        for (let i = 0; i < rows.length; i++) {
-          const name = rows[i].cells[1].children[0]?.value || "";
-          const avg = rows[i].cells[3].textContent || "";
-          const subjectRows =
-            rows[i].cells[2].getElementsByTagName("tbody")[0].rows;
+  const rows = table.getElementsByTagName("tbody")[0].rows;
+  for (let i = 0; i < rows.length; i++) {
+    const name = rows[i].cells[1].children[0]?.value || "";
+    const avg = rows[i].cells[3].textContent || "";
+    const subjectRows =
+      rows[i].cells[2].getElementsByTagName("tbody")[0].rows;
 
-          for (let j = 0; j < subjectRows.length; j++) {
-            const subjectRow = subjectRows[j];
-            wsData.push([
-              j === 0 ? i + 1 : "",
-              j === 0 ? name : "",
-              subjectRow.cells[0].children[0]?.value || "",
-              subjectRow.cells[1].children[0]?.value || "",
-              subjectRow.cells[2].textContent || "",
-              subjectRow.cells[3].textContent || "",
-              j === 0 ? avg : "",
-            ]);
-          }
-        }
+    for (let j = 0; j < subjectRows.length; j++) {
+      const subjectRow = subjectRows[j];
+      worksheetData.push([
+        j === 0 ? i + 1 : "", // No
+        j === 0 ? name : "", // Nama
+        subjectRow.cells[0].children[0]?.value || "", // Mata Pelajaran
+        subjectRow.cells[1].children[0]?.value || "", // Nilai Angka
+        subjectRow.cells[2].textContent || "", // Nilai Huruf
+        subjectRow.cells[3].textContent || "", // Nilai Angka (Huruf)
+        j === 0 ? avg : "", // Rata-rata
+      ]);
+    }
+  }
 
-        const worksheet = XLSX.utils.aoa_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Nilai Siswa");
-        XLSX.writeFile(workbook, "nilai_siswa.xlsx");
-      }
+  // Membuat worksheet dengan data dan menambahkan filter otomatis
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+  const range = XLSX.utils.decode_range(worksheet["!ref"]);
+
+  // Menambahkan filter di header
+  worksheet["!autofilter"] = { ref: XLSX.utils.encode_range(range) };
+
+  // Gaya untuk header tabel
+  const headerStyle = {
+    font: { bold: true, color: { rgb: "FFFFFF" } },
+    fill: { fgColor: { rgb: "FF0000" } },
+    alignment: { horizontal: "center" },
+  };
+
+  // Terapkan gaya header
+  const headerRow = worksheetData[0];
+  headerRow.forEach((_, colIndex) => {
+    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: colIndex });
+    if (!worksheet[cellAddress]) return;
+    worksheet[cellAddress].s = headerStyle;
+  });
+
+  // Tambahkan worksheet ke workbook
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Nilai Siswa");
+
+  // Simpan file
+  XLSX.writeFile(workbook, "nilai_siswa.xlsx");
+}
+
 
       function downloadPDF() {
         const { jsPDF } = window.jspdf;
